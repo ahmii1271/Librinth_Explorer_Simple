@@ -1,52 +1,65 @@
 #include "Menu.h"
 #include <iostream>
 
-Menu::Menu(float width, float height) : window(sf::VideoMode(width, height), "Main Menu", sf::Style::Default) {
-    mainmenuSelection = -1;
+Menu::Menu(float width, float height) {
+    mainmenuSelection = 1;
+    status = -1;
     if (!f.loadFromFile("font/cascadia.ttf")) {
         std::cerr << "Font loading failed!" << std::endl;
     }
-
-    // Initialize menu items
+    // Initializing menu items
     for (int i = 0; i < Max_main_menu; i++) {
         mainmenu[i].setFont(f);
-        mainmenu[i].setFillColor(sf::Color::White);
-        mainmenu[i].setCharacterSize(70);
-        mainmenu[i].setPosition(400, 200 + i * 100);
+        mainmenu[i].setFillColor(Color::White);
     }
+    mainmenu[0].setCharacterSize(60);
+    mainmenu[0].setPosition((MAZE_WIDTH * CELL_SIZE ) / 2, 60 + 0 * 100);
+    mainmenu[1].setCharacterSize(30);
+    mainmenu[1].setPosition(((MAZE_WIDTH * CELL_SIZE + 200) - 100) / 2, 100 + 1 * 100);
+    mainmenu[2].setCharacterSize(30);
+    mainmenu[2].setPosition(((MAZE_WIDTH * CELL_SIZE + 200) - 30) / 2, 70 + 2 * 100);
+    mainmenu[3].setCharacterSize(30);
+    mainmenu[3].setPosition(((MAZE_WIDTH * CELL_SIZE + 200) - 30) / 2, 40+ 3 * 100);
+    
+    mainmenu[0].setFillColor(Color::Red);
+    mainmenu[mainmenuSelection].setFillColor(Color::Blue);
 
-    mainmenu[0].setString("Start Game");
-    mainmenu[1].setString("HighScore");
+    mainmenu[0].setString("Labyrinth");
+    mainmenu[1].setString("New Game");
     mainmenu[2].setString("Help");
     mainmenu[3].setString("Exit");
-    mainmenu[4].setString("Explorer");
+    
 }
 
-void Menu::draw(sf::RenderWindow& window) {
+void Menu::draw(RenderWindow& window) {
+    if (status == 0)
+        mainmenu[1].setString("Continue");
     for (int i = 0; i < Max_main_menu; i++) {
         window.draw(mainmenu[i]);
     }
 }
 
 void Menu::moveup() {
-    if (mainmenuSelection - 1 >= -1) {
-        mainmenu[mainmenuSelection].setFillColor(sf::Color::White);
+    if (mainmenuSelection - 1 >= 0) {
+        mainmenu[mainmenuSelection].setFillColor(Color::White);
         mainmenuSelection--;
-        if (mainmenuSelection == -1) {
+        if (mainmenuSelection == 0) {
             mainmenuSelection = 3;
         }
-        mainmenu[mainmenuSelection].setFillColor(sf::Color::Blue);
+        mainmenu[mainmenuSelection].setFillColor(Color::Blue);
     }
+    if (mainmenuSelection == 0)
+        mainmenuSelection = 1;
 }
 
 void Menu::movedown() {
     if (mainmenuSelection + 1 <= 4) {
-        mainmenu[mainmenuSelection].setFillColor(sf::Color::White);
+        mainmenu[mainmenuSelection].setFillColor(Color::White);
         mainmenuSelection++;
         if (mainmenuSelection == 4) {
-            mainmenuSelection = 0;
+            mainmenuSelection = 1;
         }
-        mainmenu[mainmenuSelection].setFillColor(sf::Color::Blue);
+        mainmenu[mainmenuSelection].setFillColor(Color::Blue);
     }
 }
 
@@ -54,17 +67,72 @@ int Menu::mainmenuButton() {
     return mainmenuSelection;
 }
 
+void Menu::Help(RenderWindow & HELP) {
+    
+    RectangleShape instructions;
+    instructions.setSize(Vector2f(HELP.getSize()));
+    Texture Maintexture2;
+    Maintexture2.loadFromFile("img/bak_help.jpg");
+    instructions.setTexture(&Maintexture2);
+    bool close = false;
+    music.openFromFile("audio/game.ogg");
+    music.play();
+    while (HELP.isOpen())
+    {
+        Event aevent;
+        while (HELP.pollEvent(aevent))
+        {
+            if (aevent.type == Event::Closed)
+            {
+                HELP.close();
+            }
+            if (aevent.type == Event::KeyPressed)
+            {
+                if (aevent.key.code == Keyboard::Escape)
+                {
+                    close = true;
+                    break;
+                }
+            }
+        }
+        if (close)
+            break;
+
+        HELP.clear();
+        HELP.draw(instructions);
+        HELP.display();
+    }
+
+}
+
+void Menu::updateStatus(int & status) {
+    if (status == 1 || status == 2) {
+        game.maze.generateMaze();
+        game.runner.player.setPosition(Vector2f(0, 0));
+        game.points.enemies = 10;
+        game.points.health = 100;
+        game.runner.health = 100;
+        game.points.keys  = 0;
+        game.points.potions = 0;
+        game.points.swords = 0;
+        game.runner.inventory.deleteTree(game.runner.inventory.root);
+        game.treasure.randomTreasure();
+        game.maze.dijkstra(game.maze.maze, 0, 0);
+        status = 0;
+    }
+}
+
 void Menu::display_menu() {
-    RenderWindow MENU(VideoMode(800, 600), "Main Menu", Style::Default);
-	Menu mainmenu(MENU.getSize().x, MENU.getSize().y);
+    
+    RenderWindow MENU(sf::VideoMode(MAZE_WIDTH * CELL_SIZE + 200 , MAZE_HEIGHT * CELL_SIZE), "Lybrinth Explorer");
+    Menu mainmenu(MENU.getSize().x, MENU.getSize().y);
 
-    //// setting background
-    RectangleShape background;
-    background.setSize(Vector2f(800, 600));
+    Sprite background;
     Texture Maintexture;
-    Maintexture.loadFromFile("img/bak_menu.jpg");
-    background.setTexture(&Maintexture);
-
+    Maintexture.loadFromFile("img/bak_menu.jpeg");
+    background.setTexture(Maintexture);
+    game.genMaze();
+    game.treasure.randomTreasure();
     while (MENU.isOpen())
     {
         Event event;
@@ -89,119 +157,24 @@ void Menu::display_menu() {
                 if (event.key.code == Keyboard::Return)
                 {
                     int x = mainmenu.mainmenuButton();
-                    if (x == 0)
+                    if (x == 1)
                     {
-                        // Handle Start Game option
-                        std::cout << "Game start\n";
-                        //  g.start_game();
+                        status = game.start(MENU);
+                        updateStatus(status);
                     }
-                    else if (x == 1)
-                    {
-                        // Handle HighScore option
-                        // ...
-
-                        RenderWindow  HIGHSCORE(VideoMode(800, 600), "HighScore");
-                        Font font;
-                        font.loadFromFile("bahnschrift.ttf");
-
-                        Text highScoresText;
-                        highScoresText.setFont(font);
-                        highScoresText.setCharacterSize(30);
-                        highScoresText.setFillColor(Color::Red);
-                        highScoresText.setPosition(10, 10);
-
-                        /* std::ifstream file()
-                         std::string scoresText;
-                         if (file.is_open())
-                         {
-                             std::string line;
-                             scoresText += "High Scores:\n";
-                             while (getline(file, line))
-                             {
-                                 scoresText += line + "\n";
-                             }
-                             file.close();
-                         }
-
-
-                         highScoresText.setString(scoresText);*/
-
-
-                        while (HIGHSCORE.isOpen())
-                        {
-                            Event aevent;
-                            while (HIGHSCORE.pollEvent(aevent))
-                            {
-                                if (aevent.type == Event::Closed)
-                                {
-                                    HIGHSCORE.close();
-                                }
-                                if (aevent.type == Event::KeyPressed)
-                                {
-                                    if (aevent.key.code == Keyboard::Escape)
-                                    {
-                                        HIGHSCORE.close();
-                                    }
-                                }
-
-                            }
-                            HIGHSCORE.clear(Color::Black);
-                            HIGHSCORE.draw(highScoresText);
-                            HIGHSCORE.display();
-                        }
-                        /* HIGHSCORE.clear(Color::Black);
-                         HIGHSCORE.draw(highScoresText);
-                         HIGHSCORE.display();*/
-
-                    }
+                  
                     else if (x == 2)
                     {
-
-                        // Handle Help option
-                        RenderWindow HELP(VideoMode(1000, 900), "Help");
-
-                        RectangleShape instructions;
-                        instructions.setSize(Vector2f(1200, 900));
-                        Texture Maintexture2;
-                        Maintexture2.loadFromFile("img/instructions.png");
-                        instructions.setTexture(&Maintexture2);
-
-                        while (HELP.isOpen())
-                        {
-                            Event aevent;
-                            while (HELP.pollEvent(aevent))
-                            {
-                                if (aevent.type == Event::Closed)
-                                {
-                                    HELP.close();
-                                }
-                                if (aevent.type == Event::KeyPressed)
-                                {
-                                    if (aevent.key.code == Keyboard::Escape)
-                                    {
-                                        HELP.close();
-                                    }
-                                }
-                            }
-
-                            HELP.clear();
-                            HELP.draw(instructions);
-                            HELP.display();
-                        }
-
-
+                        Help(MENU);
                     }
 
                     else if (x == 3)
                     {
-                        // Handle Exit option
                         MENU.close();
                     }
                 }
             }
         }
-
-        // Clear, draw, and display
         MENU.clear();
         MENU.draw(background);
         mainmenu.draw(MENU);
