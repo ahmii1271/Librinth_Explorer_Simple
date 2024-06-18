@@ -1,10 +1,12 @@
 Controls:
-	-Arrow Keys in Menu
-	-WASD in Game
+
+ 	-Arrow Keys in Menu
+ 	-WASD in Game
 	-Additionally just open help in menu to understand the game
 
 Compiling Instructions:
-	Windows:
+	
+ 	Windows:
 		1. make sure you have installed mingw64 with sfml and then just run compile.bat
 	Linux:
 		1. make sure you have g++ and sfml installed 
