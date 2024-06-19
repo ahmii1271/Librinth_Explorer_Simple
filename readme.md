@@ -18,3 +18,7 @@ Compiling Instructions:
 	
 	For VS 2022, sfml is not configured that well and causes too many lib linkage errors so i didn't bother by putting the steps here, although the project was originally coded on visual studio with SFML VC++17 (VS22)
 			
+Algos Used:
+
+ 	Dijkstra for Pathfinding
+  	Prim's MST for MAZE Generation
